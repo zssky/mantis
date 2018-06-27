@@ -1,0 +1,133 @@
+apiVersion: extensions/v1beta1 # for versions before 1.8.0 use extensions/v1beta1 [apps/v1beta2]
+kind: DaemonSet
+metadata:
+  name: cadvisor
+  namespace: kube-system
+  labels:
+    k8s-app: cadvisor-logging
+spec:
+  selector:
+    matchLabels:
+      name: cadvisor
+  template:
+    metadata:
+      labels:
+        name: cadvisor
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      # NOTE: Running with `hostNetwork: true` means that CockroachDB will use
+      # the host machines' IP address and hostname, and that nothing else on
+      # the machines will be able to use the same ports.
+      hostNetwork: true
+      containers:
+      - name: cadvisor
+        image: cadvisor-canary:v1.0.1
+        volumeMounts:
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: var-run
+          mountPath: /var/run
+          readOnly: false
+        - name: docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        - name: dev-disk
+          mountPath: /dev/disk
+          readOnly: true
+        - name: cpu-cpuacct
+          mountPath: /sys/fs/cgroup/cpuacct,cpu
+          readOnly: true
+        - name: cpuset
+          mountPath: /sys/fs/cgroup/cpuset
+          readOnly: true
+        - name: devices
+          mountPath: /sys/fs/cgroup/devices
+          readOnly: true
+        - name: freezer
+          mountPath: /sys/fs/cgroup/freezer
+          readOnly: true
+        - name: hugetlb
+          mountPath: /sys/fs/cgroup/hugetlb
+          readOnly: true
+        - name: memory
+          mountPath: /sys/fs/cgroup/memory
+          readOnly: true
+        - name: systemd
+          mountPath: /sys/fs/cgroup/systemd
+          readOnly: true
+        - name: net-cls
+          mountPath: /sys/fs/cgroup/net_cls
+        - name: blkio
+          mountPath: /sys/fs/cgroup/blkio
+        - name: blkio-kubepods
+          mountPath: /sys/fs/cgroup/blkio/kubepods
+        - name: perf-event
+          mountPath: /sys/fs/cgroup/perf_event
+        - name: dev-mapper
+          mountPath: /dev/mapper
+        ports:
+          - name: http
+            containerPort: 18520
+            hostPort: 18520
+        securityContext:
+          privileged: true
+        args:
+          - --port=18520
+          - --profiling
+          - --enable_load_reader
+          - --max_procs=2
+          - --housekeeping_interval=1s
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: docker
+        hostPath:
+          path: /export/docker
+      - name: dev-disk
+        hostPath:
+          path: /dev/disk
+      - name: cpu-cpuacct
+        hostPath:
+          path: /sys/fs/cgroup/cpu,cpuacct
+      - name: cpuset
+        hostPath:
+          path: /sys/fs/cgroup/cpuset
+      - name: devices
+        hostPath:
+          path: /sys/fs/cgroup/devices
+      - name: freezer
+        hostPath:
+          path: /sys/fs/cgroup/freezer
+      - name: hugetlb
+        hostPath:
+          path: /sys/fs/cgroup/hugetlb
+      - name: memory
+        hostPath:
+          path: /sys/fs/cgroup/memory
+      - name: systemd
+        hostPath:
+          path: /sys/fs/cgroup/systemd
+      - name: net-cls
+        hostPath:
+          path: /sys/fs/cgroup/net_cls
+      - name: blkio
+        hostPath:
+          path: /sys/fs/cgroup/blkio
+      - name: perf-event
+        hostPath:
+          path: /sys/fs/cgroup/perf_event
+      - name: blkio-kubepods
+        hostPath:
+          path: /sys/fs/cgroup/blkio/kubepods
+      - name: dev-mapper
+        hostPath:
+          path: /dev/mapper/
+
