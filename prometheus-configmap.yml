@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prom-config-0
+  labels:
+    component: prometheus
+    app: "mantis"
+    shard: "0"
+    zone: "zone"
+    replicaid: "0"
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 30s
+    scrape_configs:
+    - job_name: 'prometheus'
+      static_configs:
+        - targets: ['localhost:9010']
+    - job_name: 'kubernetes-zone-cadvisor'
+      scheme: http
+      tls_config:
+        insecure_skip_verify: true
+      kubernetes_sd_configs:
+      - api_server: "https://192.168.1.100:6443"
+        role: node
+        basic_auth:
+         username: "user"
+         password: "passwd"
+        tls_config:
+         insecure_skip_verify: true
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_node_address_Hostname]
+        action: replace
+        target_label: __address__
+        replacement: $1:18520
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+    - job_name: 'kubernetes-zone-pods'
+      scheme: http
+      tls_config:
+        insecure_skip_verify: true
+      kubernetes_sd_configs:
+      - api_server: "https://192.168.1.100:6443"
+        role: pod
+        basic_auth:
+         username: "user"
+         password: "passwd"
+        tls_config:
+         insecure_skip_verify: true
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+        replacement: http
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_pod_label_component]
+        action: keep
+        regex: vttablet
+      - source_labels: [__meta_kubernetes_pod_container_port_name]
+        action: keep
+        regex: grpc
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        target_label: __address__
+        replacement: $1:9104
+      - action: labelmap
+        regex: __meta_kubernetes_pod_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod_name
