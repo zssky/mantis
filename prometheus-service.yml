@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: "Service"
+metadata:
+  name: prom-mjq3-0
+  labels:
+    component: prometheus
+    app: "mantis"
+    shard: "0"
+    zone: "zone"
+  annotations:
+    jcs.com/algorithm.80: SOURCE_IP
+spec:
+  sessionAffinity: ClientIP
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    component: prometheus
+    app: "mantis"
+    shard: "0"
+    zone: "zone"

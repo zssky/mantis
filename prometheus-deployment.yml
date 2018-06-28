@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    component: prometheus
+    app: "mantis"
+    shard: "0"
+    zone: "zone"
+    replicaid: "0"
+  name: prom-dp-0-0
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: prometheus
+        app: "mantis"
+        shard: "0"
+        zone: "zone"
+        replicaid: "0"
+    spec:
+      containers:
+      - name: prometheus
+        image: davygeek/prometheus:v2.3.1_2
+        command:
+          - sh
+          - "-c"
+          - >-
+            su -c "/bin/prometheus
+            --config.file=/etc/prometheus/prometheus.yml
+            --storage.tsdb.path=/export/Data/prometheus
+            --storage.tsdb.retention=24h
+            --web.enable-lifecycle"
+        ports:
+        - name: http
+          containerPort: 9090
+        volumeMounts:
+          - name: export
+            mountPath: /export
+          - name: config-volume
+            mountPath: "/etc/prometheus"
+        resources:
+          requests:
+            cpu: 4
+            memory: 8G
+          limits:
+            cpu: 8
+            memory: 16G
+        securityContext:
+          privileged: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prom-config-0
+      - name: export
+        flexVolume:
+          driver: "kubernetes.io/lvm"
+          fsType: "ext4"
+          options:
+            volumeID: "1530103546"
+            size: "500Gi"
+            volumegroup: "docker"
