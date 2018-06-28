@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    component: grafana
+    app: "mantis"
+    zone: "zone"
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        component: grafana
+        app: "mantis"
+        zone: "mjq3"
+    spec:
+      containers:
+      - name: grafana
+        image: davygeek/grafana:5.2.0_1
+        args:
+          - "-config=/etc/grafana/grafana.ini"
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4
+            memory: 8G
+          requests:
+            cpu: 2
+            memory: 4G
+        volumeMounts:
+        - name: export
+          mountPath: /export
+        - name: grafana-config
+          mountPath: /etc/grafana
+      volumes:
+        - name: grafana-config
+          configMap:
+            name: grafana-config
+        - name: export
+          flexVolume:
+            driver: "kubernetes.io/lvm"
+            fsType: "ext4"
+            options:
+              volumeID: "1530103543"
+              size: "100Gi"
+              volumegroup: "docker"
