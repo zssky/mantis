@@ -15,5 +15,5 @@ it will give you :
 
 
 it's architecture like belows show :
-
+![mantis logo](https://github.com/zssky/mantis/blob/master/res/mantis.png)
 
